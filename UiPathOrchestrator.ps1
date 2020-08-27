@@ -218,7 +218,7 @@ function Main {
 
 
     #install URLrewrite
-    Install-UrlRewrite -urlRWpath "$tempDirectory\rewrite_amd64.msi"
+    Install-UrlRewrite -urlRWpath "$tempDirectory\rewrite_amd64_en-US.msi"
 
     # install .Net 4.7.2
     Install-DotNetFramework -dotNetFrameworkPath "$tempDirectory\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
