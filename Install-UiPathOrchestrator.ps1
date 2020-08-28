@@ -260,7 +260,7 @@ function Main {
         "ORCHESTRATORFOLDER"          = "`"$($orchestratorFolder)`"";
         "DB_SERVER_NAME"              = "$($databaseServerName)";
         "DB_DATABASE_NAME"            = "$($databaseName)";
-		    "HOSTADMIN_PASSWORD"          = "$($orchestratorAdminPassword)";
+		"HOSTADMIN_PASSWORD"          = "$($orchestratorAdminPassword)";
         "DEFAULTTENANTADMIN_PASSWORD" = "$($orchestratorAdminPassword)";										
         "APP_ENCRYPTION_KEY"          = "$($getEncryptionKey.encryptionKey)";
         "APP_NUGET_ACTIVITIES_KEY"    = "$($getEncryptionKey.nugetKey)";
@@ -625,7 +625,7 @@ function Install-DotNetFramework {
 
     $installer = $dotNetFrameworkPath
 
-  $exitCode = 3010
+  $exitCode = 0
   # 3010 A restart is required to complete the installation. This message indicates success.
 
   $argumentList = "/q /norestart"
@@ -634,7 +634,8 @@ function Install-DotNetFramework {
 
   $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
 
-  if ($exitCode -ne 3010) {
+  #if ($exitCode -ne 3010) {
+  if ($exitCode -ne 0 -and $exitCode -ne 1641 -and $exitCode -ne 3010) {
       Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install .Net Framework  4.7.2(Exit code: $exitCode)" -ExitGracefully $False
   }
   else {
