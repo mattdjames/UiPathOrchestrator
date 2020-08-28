@@ -625,7 +625,7 @@ function Install-DotNetFramework {
 
     $installer = $dotNetFrameworkPath
 
-  $exitCode = 0
+  $exitCode = 1641
   # 3010 A restart is required to complete the installation. This message indicates success.
 
   $argumentList = "/q /norestart"
