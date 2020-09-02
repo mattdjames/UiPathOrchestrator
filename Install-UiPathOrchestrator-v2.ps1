@@ -635,7 +635,7 @@ function Install-DotNetFramework {
 
   $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
 
-  if ($exitCode -ne 0) {
+  if ($exitCode -ne 0 -and $exitCode -ne 1641 -and $exitCode -ne 3010) {
       Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install .Net Framework  4.7.2(Exit code: $exitCode)" -ExitGracefully $False
   }
   else {
