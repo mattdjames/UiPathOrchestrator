@@ -184,9 +184,8 @@ function Main {
 
     }
 
-   # if (!$orchestratorHostname) { $orchestratorHostname = $env:COMPUTERNAME }
-     if (!orchestratorHostname) { $orchestratorHostname = dara-sand.deloittecloud.co.uk }
-
+    if (!$orchestratorHostname) { $orchestratorHostname = $env:COMPUTERNAME }
+   
     $features = @(
         'IIS-DefaultDocument',
         'IIS-HttpErrors',
