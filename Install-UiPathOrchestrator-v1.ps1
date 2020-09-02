@@ -184,7 +184,8 @@ function Main {
 
     }
 
-    if (!$orchestratorHostname) { $orchestratorHostname = $env:COMPUTERNAME }
+   # if (!$orchestratorHostname) { $orchestratorHostname = $env:COMPUTERNAME }
+     if (!orchestratorHostname) { $orchestratorHostname = dara-sand.deloittecloud.co.uk }
 
     $features = @(
         'IIS-DefaultDocument',
@@ -241,21 +242,21 @@ function Main {
 
     $msiFeatures = @("OrchestratorFeature")
 
-    if ($orchestratorVersion.StartsWith("2")) {
+    #if ($orchestratorVersion.StartsWith("2")) {
 
-        $msiFeatures += @("IdentityFeature")
+     #   $msiFeatures += @("IdentityFeature")
         
-        try {
+       # try {
           
          # Install-DotNetHostingBundle -DotNetHostingBundlePath "$tempDirectory\dotnet-hosting-3.1.3-win.exe"
           
-        }
-        catch {
-          Write-Error $_.exception.message
-          Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing Dotnet hosting" -ExitGracefully $True
-      }
+        #}
+       # catch {
+      #    Write-Error $_.exception.message
+     #     Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing Dotnet hosting" -ExitGracefully $True
+    #  }
 
-    }
+   # }
 
     $msiProperties = @{ }
     $msiProperties += @{
