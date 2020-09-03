@@ -145,10 +145,9 @@ function Main {
 
         $source = @()
         $source += "https://download.uipath.com/versions/$orchestratorVersion/UiPathOrchestrator.msi"
-        $source += "https://download.microsoft.com/download/1/2/8/128E2E22-C1B9-44A4-BE2A-5859ED1D4592/rewrite_amd64_en-US.msi"
-        $source += "https://download.microsoft.com/download/6/E/4/6E48E8AB-DC00-419E-9704-06DD46E5F81D/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-        #$source += "http://go.microsoft.com/fwlink/?LinkId=863262/NDP472-KB4054531-Web.exe"
-        $source += "https://download.visualstudio.microsoft.com/download/pr/ff658e5a-c017-4a63-9ffe-e53865963848/15875eef1f0b8e25974846e4a4518135/dotnet-hosting-3.1.3-win.exe"
+        #$source += "https://download.microsoft.com/download/1/2/8/128E2E22-C1B9-44A4-BE2A-5859ED1D4592/rewrite_amd64_en-US.msi"
+        #$source += "https://download.microsoft.com/download/6/E/4/6E48E8AB-DC00-419E-9704-06DD46E5F81D/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
+        #$source += "https://download.visualstudio.microsoft.com/download/pr/ff658e5a-c017-4a63-9ffe-e53865963848/15875eef1f0b8e25974846e4a4518135/dotnet-hosting-3.1.3-win.exe"
         $tries = 5
         while ($tries -ge 1) {
             try {
@@ -217,16 +216,6 @@ function Main {
         Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing $feature" -ExitGracefully $True
     }
 
-
-    #install URLrewrite
-    Install-UrlRewrite -urlRWpath "$tempDirectory\rewrite_amd64_en-US.msi"
-
-    # install .Net 4.7.2
-    Install-DotNetFramework -dotNetFrameworkPath "$tempDirectory\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-    #Install-DotNetFramework -dotNetFrameworkPath "tempDirectory\NDP472-KB4054531-Web.exe"
-
-    # ((Invoke-WebRequest -Uri http://169.254.169.254/latest/meta-data/public-hostname -UseBasicParsing).RawContent -split "`n")[-1]
-
     $cert = New-SelfSignedCertificate -DnsName "$env:COMPUTERNAME", "$orchestratorHostname" -CertStoreLocation cert:\LocalMachine\My -FriendlyName "Orchestrator Self-Signed certificate" -KeySpec Signature -HashAlgorithm SHA256 -KeyExportPolicy Exportable  -NotAfter (Get-Date).AddYears(20)
 
     $thumbprint = $cert.Thumbprint
@@ -241,27 +230,17 @@ function Main {
 
     $msiFeatures = @("OrchestratorFeature")
 
-    if ($orchestratorVersion.StartsWith("2")) {
+   # if ($orchestratorVersion.StartsWith("2")) {
 
         $msiFeatures += @("IdentityFeature")
         
-        try {
-          
-          Install-DotNetHostingBundle -DotNetHostingBundlePath "$tempDirectory\dotnet-hosting-3.1.3-win.exe"
-          
-        }
-        catch {
-          Write-Error $_.exception.message
-          Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing Dotnet hosting" -ExitGracefully $True
-      }
-
-    }
-
     $msiProperties = @{ }
-    $msiProperties += @{
+        $msiProperties += @{
         "ORCHESTRATORFOLDER"          = "`"$($orchestratorFolder)`"";
         "DB_SERVER_NAME"              = "$($databaseServerName)";
         "DB_DATABASE_NAME"            = "$($databaseName)";
+      #  "CERTIFICATE_SUBJECT"         = "$(*.deloittecloud.co.uk)";
+    #    "WEBSITE_NAME"                = "$(UiPath Orchestrator)";
 		"HOSTADMIN_PASSWORD"          = "$($orchestratorAdminPassword)";
         "DEFAULTTENANTADMIN_PASSWORD" = "$($orchestratorAdminPassword)";										
         "APP_ENCRYPTION_KEY"          = "$($getEncryptionKey.encryptionKey)";
@@ -270,6 +249,7 @@ function Main {
         "APP_MACHINE_DECRYPTION_KEY"  = "$($getEncryptionKey.DecryptionKey)";
         "APP_MACHINE_VALIDATION_KEY"  = "$($getEncryptionKey.Validationkey)";
         "TELEMETRY_ENABLED"           = "0";
+    #    "PUBLIC_URL"                  = "$($orchestratorHostname)";
     }
 
     if ($appPoolIdentityType -eq "USER") {
@@ -563,130 +543,7 @@ function Install-UiPathOrchestratorEnterprise {
     .Example
       Install-UrlRewrite -urlRWpath "C:\temp\rewrite_amd64.msi"
 #>
-function Install-UrlRewrite {
 
-    param(
-
-        [Parameter(Mandatory = $true)]
-        [string]
-        $urlRWpath
-
-    )
-
-    # Do nothing if URL Rewrite module is already installed
-    $rewriteDllPath = Join-Path $Env:SystemRoot 'System32\inetsrv\rewrite.dll'
-
-    if (Test-Path -Path $rewriteDllPath) {
-        Log-Write -LogPath $sLogFile -LineValue  "IIS URL Rewrite 2.0 Module is already installed"
-
-        return
-    }
-
-    $installer = $urlRWpath
-
-    $exitCode = 0
-    $argumentList = "/i `"$installer`" /q /norestart"
-
-    Log-Write -LogPath $sLogFile -LineValue  "Installing IIS URL Rewrite 2.0 Module"
-
-    $exitCode = (Start-Process -FilePath "msiexec.exe" -ArgumentList $argumentList -Wait -Passthru).ExitCode
-
-    if ($exitCode -ne 0 -and $exitCode -ne 1641 -and $exitCode -ne 3010) {
-        Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install IIS URL Rewrite 2.0 Module (Exit code: $exitCode)" -ExitGracefully $False
-    }
-    else {
-        Log-Write -LogPath $sLogFile -LineValue  "IIS URL Rewrite 2.0 Module successfully installed"
-    }
-}
-
-<#
-    .SYNOPSIS
-      Install .Net Framework 4.7.2 necessary for UiPath Orchestrator.
-
-    .PARAMETER dotNetFrameworkPath
-      Mandatory. String. Path to URL Rewrite package. Example: $dotNetFrameworkPath = "C:\temp\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-
-    .INPUTS
-      Parameters above.
-
-    .OUTPUTS
-      None
-
-    .Example
-      Install-DotNetFramework -dotNetFrameworkPath "C:\temp\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-#>
-function Install-DotNetFramework {
-
-  param(
-
-      [Parameter(Mandatory = $true)]
-      [string]
-      $dotNetFrameworkPath
-
-  )
-
-    $installer = $dotNetFrameworkPath
-
-  $exitCode = 3010
-  # 3010 A restart is required to complete the installation. This message indicates success.
-
-  $argumentList = "/q /norestart"
-
-  Log-Write -LogPath $sLogFile -LineValue  "Installing .Net Framework 4.7.2"
-
-  $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
-
-  #if ($exitCode -ne 3010) {
-  if ($exitCode -ne 0 -and $exitCode -ne 1641 -and $exitCode -ne 3010) {
-      Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install .Net Framework  4.7.2(Exit code: $exitCode)" -ExitGracefully $False
-  }
-  else {
-      Log-Write -LogPath $sLogFile -LineValue  ".Net Framework 4.7.2 successfully installed"
-  }
-}
-
-<#
-    .SYNOPSIS
-      Install ASP.NET Core Hosting Bundle necessary for UiPath Orchestrator.
-
-    .PARAMETER DotNetHostingBundlePath
-      Mandatory. String. Path to URL Rewrite package. Example: $DotNetHostingBundlePath = "C:\temp\dotnet-hosting-3.1.3-win.exe"
-
-    .INPUTS
-      Parameters above.
-
-    .OUTPUTS
-      None
-
-    .Example
-      Install-DotNetHostingBundle -DotNetHostingBundlePath "C:\temp\dotnet-hosting-3.1.3-win.exe"
-#>
-function Install-DotNetHostingBundle {
-
-  param(
-
-      [Parameter(Mandatory = $true)]
-      [string]
-      $DotNetHostingBundlePath
-
-  )
-
-    $installer = $DotNetHostingBundlePath
-
-  $exitCode = 0
-  $argumentList = "OPT_NO_SHARED_CONFIG_CHECK=1 /q /norestart"
-
-  Log-Write -LogPath $sLogFile -LineValue  "Installing ASP.NET Core Hosting Bundle"
-
-  $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
-
-  if ($exitCode -ne 0) {
-      Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install ASP.NET Core Hosting Bundle(Exit code: $exitCode)" -ExitGracefully $False
-  }
-  else {
-      Log-Write -LogPath $sLogFile -LineValue  "ASP.NET Core Hosting Bundle successfully installed"
-  }
-}
 
 <#
     .SYNOPSIS
@@ -1275,3 +1132,5 @@ function Log-Finish {
 Log-Start -LogPath $sLogPath -LogName $sLogName -ScriptVersion $sScriptVersion
 Main
 Log-Finish -LogPath $sLogFile
+
+.\Install-UiPathOrchestrator.ps1 -OrchestratorVersion "20.4.1" -passphrase "AnyPassPhrase!@#$" -databaseServerName "sbx-1-rds-1.cqsu3wajkhpq.eu-west-2.rds.amazonaws.com" -databaseName "UiPath1111" -databaseUserName "orchestrator_admin" -databaseUserPassword "2aWe1y0lubiKtKl3" -orchestratorAdminPassword "NAwiyWhqpRi60S3as5i8" -orchestratorHostname "sbx-test.deloittecloud.co.uk"
