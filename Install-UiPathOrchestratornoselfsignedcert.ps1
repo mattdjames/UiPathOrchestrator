@@ -216,13 +216,13 @@ function Main {
         Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing $feature" -ExitGracefully $True
     }
 
-    $cert = New-SelfSignedCertificate -DnsName "$env:COMPUTERNAME", "$orchestratorHostname" -CertStoreLocation cert:\LocalMachine\My -FriendlyName "Orchestrator Self-Signed certificate" -KeySpec Signature -HashAlgorithm SHA256 -KeyExportPolicy Exportable  -NotAfter (Get-Date).AddYears(20)
+    #$cert = New-SelfSignedCertificate -DnsName "$env:COMPUTERNAME", "$orchestratorHostname" -CertStoreLocation cert:\LocalMachine\My -FriendlyName "Orchestrator Self-Signed certificate" -KeySpec Signature -HashAlgorithm SHA256 -KeyExportPolicy Exportable  -NotAfter (Get-Date).AddYears(20)
 
-    $thumbprint = $cert.Thumbprint
+    #$thumbprint = $cert.Thumbprint
 
-    Export-Certificate -Cert cert:\localmachine\my\$thumbprint -FilePath "$($tempDirectory)\OrchPublicKey.cer" -force
+    #Export-Certificate -Cert cert:\localmachine\my\$thumbprint -FilePath "$($tempDirectory)\OrchPublicKey.cer" -force
 
-    Import-Certificate -FilePath "$($tempDirectory)\OrchPublicKey.cer" -CertStoreLocation "cert:\LocalMachine\Root"
+    #Import-Certificate -FilePath "$($tempDirectory)\OrchPublicKey.cer" -CertStoreLocation "cert:\LocalMachine\Root"
 
     #install Orchestrator
 
@@ -239,7 +239,7 @@ function Main {
         "ORCHESTRATORFOLDER"          = "`"$($orchestratorFolder)`"";
         "DB_SERVER_NAME"              = "$($databaseServerName)";
         "DB_DATABASE_NAME"            = "$($databaseName)";
-      #  "CERTIFICATE_SUBJECT"         = "$(*.deloittecloud.co.uk)";
+        "CERTIFICATE_SUBJECT"         = "$(*.deloittecloud.co.uk)";
     #    "WEBSITE_NAME"                = "$(UiPath Orchestrator)";
 		"HOSTADMIN_PASSWORD"          = "$($orchestratorAdminPassword)";
         "DEFAULTTENANTADMIN_PASSWORD" = "$($orchestratorAdminPassword)";										
@@ -249,7 +249,7 @@ function Main {
         "APP_MACHINE_DECRYPTION_KEY"  = "$($getEncryptionKey.DecryptionKey)";
         "APP_MACHINE_VALIDATION_KEY"  = "$($getEncryptionKey.Validationkey)";
         "TELEMETRY_ENABLED"           = "0";
-    #    "PUBLIC_URL"                  = "$($orchestratorHostname)";
+        "PUBLIC_URL"                  = "$(sbx-test.deloittecloud.co.uk)";
     }
 
     if ($appPoolIdentityType -eq "USER") {
@@ -1133,4 +1133,3 @@ Log-Start -LogPath $sLogPath -LogName $sLogName -ScriptVersion $sScriptVersion
 Main
 Log-Finish -LogPath $sLogFile
 
-.\Install-UiPathOrchestrator.ps1 -OrchestratorVersion "20.4.1" -passphrase "AnyPassPhrase!@#$" -databaseServerName "sbx-1-rds-1.cqsu3wajkhpq.eu-west-2.rds.amazonaws.com" -databaseName "UiPath1111" -databaseUserName "orchestrator_admin" -databaseUserPassword "2aWe1y0lubiKtKl3" -orchestratorAdminPassword "NAwiyWhqpRi60S3as5i8" -orchestratorHostname "sbx-test.deloittecloud.co.uk"
